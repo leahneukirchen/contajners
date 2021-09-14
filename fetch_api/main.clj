@@ -7,7 +7,8 @@
     [io.swagger.parser OpenAPIParser]
     [io.swagger.v3.oas.models Operation PathItem]
     [io.swagger.v3.oas.models.parameters Parameter]
-    [io.swagger.v3.parser.core.models ParseOptions]))
+    [io.swagger.v3.parser.core.models ParseOptions]
+    [io.swagger.v3.oas.models.media StringSchema IntegerSchema BooleanSchema]))
 
 (def sources
   {:docker {:url      "https://docs.docker.com/engine/api/%s.yaml"
@@ -88,6 +89,27 @@
   [^Parameter param]
   {:name (.getName param)
    :in   (keyword (.getIn param))})
+
+(defmulti schema class)
+
+(defmethod schema
+  StringSchema
+  [_]
+  string?)
+
+(defmethod schema
+  IntegerSchema
+  [_]
+  int?)
+
+(defmethod schema
+  BooleanSchema
+  [_]
+  boolean?)
+
+(defn to-schema
+  [^Parameter param]
+  (-> param .getSchema schema))
 
 (defn ->operation
   "Given a path, http method and an io.swagger.v3.oas.models.Operation, returns a map of operation id and necessary keys."
@@ -199,4 +221,14 @@
   (-> "https://docs.docker.com/engine/api/v1.41.yaml"
       http/get
       :body
-      (parse #{})))
+      (parse #{}))
+
+  (import '[io.swagger.v3.oas.models.parameters PathParameter QueryParameter RequestBody]
+          '[io.swagger.v3.oas.models.media StringSchema])
+  (def param (doto (QueryParameter.)
+              (.setName "id")
+              (.setSchema (StringSchema.))))
+
+  (to-schema param)
+
+  )
